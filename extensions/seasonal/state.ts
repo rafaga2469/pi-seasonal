@@ -13,14 +13,18 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
+export type CountrySetting = "auto" | "co" | "generic";
+
 export interface SeasonalState {
 	/** Decoration on or off. */
 	mode: "on" | "off";
 	/** Active season override, or null to follow the calendar. */
 	override: string | null;
+	/** Country calendar: auto (timezone), co, or generic. */
+	country: CountrySetting;
 }
 
-const DEFAULT_STATE: SeasonalState = { mode: "on", override: null };
+const DEFAULT_STATE: SeasonalState = { mode: "on", override: null, country: "auto" };
 
 const LEGACY_PATH = join(homedir(), ".pi", "agent", "extensions", "seasonal", "state.json");
 
@@ -32,7 +36,8 @@ function parse(raw: string): SeasonalState {
 	const data = JSON.parse(raw);
 	const mode = data?.mode === "off" ? "off" : data?.mode === "on" ? "on" : DEFAULT_STATE.mode;
 	const override = typeof data?.override === "string" ? data.override : null;
-	return { mode, override };
+	const country = data?.country === "co" || data?.country === "generic" ? data.country : "auto";
+	return { mode, override, country };
 }
 
 export function loadState(): SeasonalState {

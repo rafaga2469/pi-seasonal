@@ -1,16 +1,21 @@
 /**
  * Season calendar for the seasonal decoration extension.
  *
- * Fixed holidays use month/day ranges; movable ones (Carnaval, Semana Santa,
- * Pascua) are derived from the Easter date computed with the anonymous
- * Gregorian algorithm. First matching season wins; keep more specific or
- * higher-priority seasons earlier in SEASONS.
+ * Two calendars cooperate, resolved by country:
+ *  - CO (Colombia): official holidays with Ley Emiliani moves (holidays_co.ts),
+ *    taking priority over generic seasons on their exact resting date.
+ *  - generic: international festive seasons (Halloween month, Navidad, Pascua...)
  *
- * To add a season, append an entry to SEASONS (or a `custom` entry in
- * state.json) and a scene in scenes.ts.
+ * The `generic` calendar keeps fixed month/day ranges; movable ones (Carnaval,
+ * Semana Santa, Pascua) are derived from the Easter date computed with the
+ * anonymous Gregorian algorithm. First matching season wins.
+ *
+ * Country detection uses the terminal timezone; an explicit country override
+ * lives in state.json (`country: "co" | "generic" | null` = auto).
  */
 
 import type { Season } from "./types.ts";
+import { CO_HOLIDAYS, holidayMatches, holidayToSeason, type HolidayDef } from "./holidays_co.ts";
 
 export interface SeasonDefinition {
 	id: string;
@@ -26,7 +31,21 @@ export interface SeasonDefinition {
 	height: number;
 }
 
-/** Inclusive month/day comparison helpers (no year, works across year end). */
+export type Country = "co" | "generic";
+
+/** Timezone → country mapping. Only zones we decorate are listed. */
+const TIMEZONE_COUNTRIES: Record<string, Country> = {
+	"America/Bogota": "co",
+	"America/Cartagena": "co",
+	"America/Cali": "co",
+};
+
+/** Detect the country from the host timezone; undefined → generic calendar. */
+export function detectCountry(timeZone?: string): Country | undefined {
+	const tz = timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
+	return TIMEZONE_COUNTRIES[tz];
+}
+
 function md(month: number, day: number): number {
 	return month * 100 + day;
 }
@@ -35,9 +54,6 @@ function inFixedRange(m: number, d: number, range: { start: [number, number]; en
 	const v = md(m, d);
 	const a = md(range.start[0], range.start[1]);
 	const b = md(range.end[0], range.end[1]);
-	// Ranges never wrap in this calendar (each season stays inside one visit of
-	// the year, and New Year's Eve/New Year's Day share the `newyear` season via
-	// two entries instead).
 	return a <= v && v <= b;
 }
 
@@ -74,7 +90,6 @@ export const SEASONS: SeasonDefinition[] = [
 		banner: "-=[ ¡Feliz Año Nuevo! ]=-",
 		color: "gold",
 		intervalMs: 550,
-		// Nochevieja + Año Nuevo, one wrapped season handled by resolve().
 		height: 6,
 	},
 	{
@@ -110,7 +125,6 @@ export const SEASONS: SeasonDefinition[] = [
 		banner: "-=[ ¡Carnaval! ]=-",
 		color: "purple",
 		intervalMs: 550,
-		// From 53 to 46 days before Easter: carnival week ending on Ash Wednesday - 1.
 		easterOffset: { from: -53, to: -46 },
 		height: 5,
 	},
@@ -120,7 +134,6 @@ export const SEASONS: SeasonDefinition[] = [
 		banner: "-=[ Pascua ]=-",
 		color: "gold",
 		intervalMs: 800,
-		// Palm Sunday through Easter Sunday.
 		easterOffset: { from: -8, to: 0 },
 		height: 6,
 	},
@@ -153,12 +166,7 @@ export const SEASONS: SeasonDefinition[] = [
 	},
 ];
 
-/** User-defined extra seasons, read from state.json (`custom: [...]`). */
-export interface CustomSeasonDefinition extends Omit<SeasonDefinition, "easterOffset"> {
-	range: { start: [number, number]; end: [number, number] };
-}
-
-/** Resolve the active season definition for a date, or undefined for a plain day. */
+/** Resolve the active generic season definition for a date, or undefined. */
 export function resolveSeasonDefinition(date: Date): SeasonDefinition | undefined {
 	const year = date.getFullYear();
 	const month = date.getMonth() + 1;
@@ -188,15 +196,76 @@ export function resolveSeasonDefinition(date: Date): SeasonDefinition | undefine
 	return undefined;
 }
 
-/** All season ids known to the calendar (for /seasonal holiday <id>). */
+// --- Colombian official holidays -------------------------------------------
+
+let coSeasons: Season[] | undefined;
+
+function coHolidaySeasons(): Season[] {
+	coSeasons ??= CO_HOLIDAYS.map((def: HolidayDef) => holidayToSeason(def));
+	return coSeasons;
+}
+
+function resolveCoHoliday(date: Date): Season | undefined {
+	const year = date.getFullYear();
+	const easter = easterSunday(year);
+	for (let i = 0; i < CO_HOLIDAYS.length; i++) {
+		if (holidayMatches(CO_HOLIDAYS[i], date, easter)) {
+			return coHolidaySeasons()[i];
+		}
+	}
+	return undefined;
+}
+
+/** Generic calendar resolution (existing seasons), exported for country=generic. */
+export function resolveGenericSeason(date: Date): SeasonDefinition | undefined {
+	return resolveSeasonDefinition(date);
+}
+
+/**
+ * Resolve the active season for a date in the given country.
+ * Colombia: official holidays win over the generic festive seasons (specific
+ * beats seasonal range), then the generic calendar applies.
+ */
+export function resolveSeasonForCountry(date: Date, country: Country): Season | undefined {
+	if (country === "co") {
+		const holiday = resolveCoHoliday(date);
+		if (holiday) return holiday;
+	}
+	return resolveGenericCalendarScene(date);
+}
+
+function resolveGenericCalendarScene(date: Date): Season | undefined {
+	const def = resolveSeasonDefinition(date);
+	return def ? genericSceneById(def.id) : undefined;
+}
+
+/** All season ids known to the calendar (generic + CO holidays). */
 export function knownSeasonIds(): string[] {
-	return SEASONS.map((s) => s.id);
+	return [...SEASONS.map((s) => s.id), ...CO_HOLIDAYS.map((h) => h.id)];
 }
 
 export function definitionById(id: string): SeasonDefinition | undefined {
 	return SEASONS.find((s) => s.id === id);
 }
 
-export function definitionToSeason(def: SeasonDefinition, scenes: Record<string, Season | undefined>): Season | undefined {
-	return scenes[def.id];
+// Scene wiring lives in scenes.ts; the calendar keeps id lookups only.
+// Filled by setSceneRegistry to avoid a circular import.
+let sceneLookup: (id: string) => Season | undefined = () => undefined;
+
+export function setSceneRegistry(lookup: (id: string) => Season | undefined): void {
+	sceneLookup = lookup;
+}
+
+function genericSceneById(id: string): Season | undefined {
+	return sceneLookup(id);
+}
+
+/** Scene lookup for any known id (generic seasons and CO holidays). */
+export function sceneById(id: string): Season | undefined {
+	return sceneLookup(id) ?? coSceneById(id);
+}
+
+export function coSceneById(id: string): Season | undefined {
+	const index = CO_HOLIDAYS.findIndex((h) => h.id === id);
+	return index === -1 ? undefined : coHolidaySeasons()[index];
 }

@@ -9,7 +9,7 @@
  * decoration tolerates it.
  */
 
-import type { Kit, Season } from "./types.ts";
+import type { InlineSpriteDef, Kit, Season } from "./types.ts";
 import { blit, canvasToLines, createCanvas, hash, put, widthOf, type Canvas } from "./canvas.ts";
 
 const TAU = Math.PI * 2;
@@ -60,13 +60,6 @@ function render(canvas: Canvas, kit: Kit, width: number): string[] {
 // Inline mode: ONE line per frame — banner centered plus animating sprites.
 // ---------------------------------------------------------------------------
 
-export interface InlineSpriteDef {
-	emoji: string;
-	color: string;
-	/** Overrides the automatic per-index speed (see AUTO_SPEEDS). */
-	speed?: number;
-}
-
 /** Distinct automatic drift speeds so every sprite moves at its own pace. */
 const AUTO_SPEEDS = [0.5, 0.9, 1.2, 1.6, 0.7, 1.35, 0.6, 1.1, 0.8];
 
@@ -76,7 +69,7 @@ const AUTO_SPEEDS = [0.5, 0.9, 1.2, 1.6, 0.7, 1.35, 0.6, 1.1, 0.8];
  * clump. Sprites budget their own capacity: canvas columns = width - sprite
  * count, so the padded line measures exactly the widget width.
  */
-function makeInline(
+export function makeInline(
 	sprites: InlineSpriteDef[],
 	asciiAccent?: (canvas: Canvas, cols: number, frame: number) => void,
 ): Season["inline"] {

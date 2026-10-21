@@ -20,6 +20,20 @@ export type ColorKey =
 	| "flame"
 	| "web";
 
+export interface InlineSpriteDef {
+	emoji: string;
+	color: string;
+	/** Overrides the automatic per-index speed (see AUTO_SPEEDS in scenes.ts). */
+	speed?: number;
+}
+
+export interface InlineSpriteDef {
+	emoji: string;
+	color: string;
+	/** Overrides the automatic per-index speed (see AUTO_SPEEDS in scenes.ts). */
+	speed?: number;
+}
+
 /**
  * Style helper handed to scenes. Wraps text in the right ANSI for the host theme,
  * or passes through unchanged in tests.

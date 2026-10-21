@@ -1,25 +1,35 @@
 /**
  * Seasonal decoration for Pi.
  *
- * A live ambient widget above the editor plus a `/seasonal` command:
+ * An animated emoji line pinned below the shell header plus a `/seasonal` command:
  *
- *   /seasonal                 show current season and mode
- *   /seasonal on|off          toggle the ambient widget
- *   /seasonal overlay         celebration overlay for the active season
- *   /seasonal auto            follow the calendar again (clears an override)
- *   /seasonal holiday <id>    pin a season (e.g. `seasonal holiday halloween`)
+ *   /seasonal                    show status (season, country, mode)
+ *   /seasonal on|off             toggle the decoration line
+ *   /seasonal overlay            celebration overlay for the active season
+ *   /seasonal auto               follow the calendar again (clears an override)
+ *   /seasonal holiday <id>       pin a season (e.g. `seasonal holiday halloween`)
+ *   /seasonal country <code>     calendar selection: auto (timezone) | co | generic
  *
- * Seasons resolve from the calendar; the preference persists in state.json
- * next to this extension.
+ * The country decides the calendar: Colombia runs its official holidays
+ * (Ley Emiliani + Ley 2578); anything else gets the generic festive calendar.
+ * Preferences persist in the agent dir.
  */
 
 import type { ExtensionAPI, ExtensionCommandContext, Theme } from "@earendil-works/pi-coding-agent";
 import type { TUI } from "@earendil-works/pi-tui";
-import { definitionById, knownSeasonIds, resolveSeasonDefinition } from "./calendar.ts";
-import { createPinnedDecoration, type PinnedDecoration } from "./decoration.ts";
+import {
+	coSceneById,
+	definitionById,
+	detectCountry,
+	knownSeasonIds,
+	resolveSeasonForCountry,
+	setSceneRegistry,
+	type Country,
+} from "./calendar.ts";
+import { createPinnedDecoration } from "./decoration.ts";
 import { celebrationFactory } from "./overlay.ts";
-import { sceneById } from "./scenes.ts";
-import { loadState, saveState, type SeasonalState } from "./state.ts";
+import { SCENES } from "./scenes.ts";
+import { loadState, saveState, type CountrySetting, type SeasonalState } from "./state.ts";
 import { createKit, createWidget, type WidgetComponent } from "./widget.ts";
 import type { Season } from "./types.ts";
 
@@ -27,11 +37,19 @@ const ANCHOR_KEY = "seasonal-decor-anchor";
 const WIDGET_KEY = "seasonal-decor";
 
 export default function (pi: ExtensionAPI) {
+	// Wire the scene registry so the calendar can look up generic scenes.
+	setSceneRegistry((id) => SCENES[id]);
+
 	let state: SeasonalState = loadState();
 
+	function activeCountry(s: SeasonalState): Country {
+		if (s.country === "co" || s.country === "generic") return s.country;
+		return detectCountry() ?? "generic";
+	}
+
 	function resolveSeason(s: SeasonalState): Season | undefined {
-		const def = s.override ? definitionById(s.override) : resolveSeasonDefinition(new Date());
-		return def ? sceneById(def.id) : undefined;
+		if (s.override) return SCENES[s.override] ?? coSceneById(s.override);
+		return resolveSeasonForCountry(new Date(), activeCountry(s));
 	}
 
 	/**
@@ -83,11 +101,12 @@ export default function (pi: ExtensionAPI) {
 	}
 
 	function statusText(season: Season | undefined): string {
+		const country = activeCountry(state);
 		if (!season) {
-			return "Sin temporada activa hoy. Puedes fijar una con /seasonal holiday <id>.";
+			return `Sin temporada activa hoy (calendario ${country}). Puedes fijar una con /seasonal holiday <id>.`;
 		}
-		const source = state.override ? "anulada manualmente" : "calendario";
-		return `${season.label} — widget ${state.mode}, temporada: ${source}.`;
+		const source = state.override ? "anulada manualmente" : `calendario ${country}`;
+		return `${season.label} — decoración ${state.mode}, fuente: ${source}.`;
 	}
 
 	pi.on("session_start", (_event, ctx) => {
@@ -99,9 +118,9 @@ export default function (pi: ExtensionAPI) {
 	});
 
 	pi.registerCommand("seasonal", {
-		description: "Decoración de temporada: status | on | off | overlay | auto | holiday <id>",
+		description: "Decoración de temporada: status | on | off | overlay | auto | holiday <id> | country <auto|co|generic>",
 		getArgumentCompletions: (prefix: string) => {
-			const options = ["status", "on", "off", "overlay", "auto", "holiday", ...knownSeasonIds()];
+			const options = ["status", "on", "off", "overlay", "auto", "holiday", "country", ...knownSeasonIds()];
 			const matches = options.filter((o) => o.startsWith(prefix));
 			if (matches.length === 0) return null;
 			return matches.map((m) => ({ value: m, label: m }));
@@ -120,7 +139,7 @@ export default function (pi: ExtensionAPI) {
 					state = { ...state, mode: verb as SeasonalState["mode"] };
 					saveState(state);
 					ensureDecoration(ctx.ui, resolveSeason(state));
-					ctx.ui.notify(verb === "on" ? "Widget de temporada activado." : "Widget de temporada desactivado.", "info");
+					ctx.ui.notify(verb === "on" ? "Decoración activada." : "Decoración desactivada.", "info");
 					return;
 				}
 				case "auto": {
@@ -132,14 +151,29 @@ export default function (pi: ExtensionAPI) {
 				}
 				case "holiday": {
 					const id = rest[0];
-					if (!id || !definitionById(id) || !sceneById(id)) {
+					if (!id || !(SCENES[id] || coSceneById(id))) {
 						ctx.ui.notify(`Temporada desconocida: ${id ?? "(vacío)"}. Temporadas: ${knownSeasonIds().join(", ")}`, "warning");
 						return;
 					}
-					state = { mode: "on", override: id };
+					state = { ...state, mode: "on", override: id };
 					saveState(state);
-					ensureDecoration(ctx.ui, sceneById(id));
+					ensureDecoration(ctx.ui, SCENES[id] ?? coSceneById(id));
 					ctx.ui.notify(`Decoración fijada en ${id}. Usa /seasonal auto para volver al calendario.`, "info");
+					return;
+				}
+				case "country": {
+					const value = rest[0];
+					if (!value || value.startsWith("auto")) {
+						state = { ...state, country: "auto" };
+					} else if (value === "co" || value === "generic") {
+						state = { ...state, country: value as Exclude<CountrySetting, "auto"> };
+					} else {
+						ctx.ui.notify(`País desconocido: ${value}. Opciones: auto (por zona horaria), co (Colombia), generic.`, "warning");
+						return;
+					}
+					saveState(state);
+					ensureDecoration(ctx.ui, resolveSeason(state));
+					ctx.ui.notify(statusText(resolveSeason(state)), "info");
 					return;
 				}
 				case "overlay": {
@@ -156,7 +190,10 @@ export default function (pi: ExtensionAPI) {
 					return;
 				}
 				default: {
-					ctx.ui.notify(`Uso: /seasonal [status|on|off|overlay|auto|holiday <id>]\nTemporadas: ${knownSeasonIds().join(", ")}`, "warning");
+					ctx.ui.notify(
+						`Uso: /seasonal [status|on|off|overlay|auto|holiday <id>|country <auto|co|generic>]\nTemporadas: ${knownSeasonIds().join(", ")}`,
+						"warning",
+					);
 				}
 			}
 		},
