@@ -1,0 +1,22 @@
+{
+	"compilerOptions": {
+		"target": "ES2022",
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"strict": true,
+		"noEmit": true,
+		"allowImportingTsExtensions": true,
+		"skipLibCheck": true,
+		"types": ["node"],
+		"typeRoots": ["/home/rpinto/Workspace/pi-actsis-litellm/node_modules/@types"],
+		"paths": {
+			"@earendil-works/pi-tui": [
+				"/home/rpinto/.pi/agent/install/releases/1.3.0/node_modules/@earendil-works/pi-tui/dist/index.d.ts"
+			],
+			"@earendil-works/pi-coding-agent": [
+				"/home/rpinto/.pi/agent/install/releases/1.3.0/node_modules/@earendil-works/pi-coding-agent/dist/index.d.ts"
+			]
+		}
+	},
+	"include": ["./*.ts"]
+}

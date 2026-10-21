@@ -1,0 +1,44 @@
+{
+	"name": "pi-seasonal",
+	"version": "0.1.0",
+	"description": "Pi extension: seasonal terminal decoration with animated emoji scenes pinned below the shell header (Halloween, Christmas, New Year, and more).",
+	"type": "module",
+	"engines": {
+		"node": ">=20"
+	},
+	"scripts": {
+		"test:smoke": "tsx extensions/seasonal/smoke.ts",
+		"typecheck": "tsc --noEmit -p extensions/seasonal/tsconfig.typecheck.json"
+	},
+	"keywords": [
+		"pi-package",
+		"pi",
+		"seasonal",
+		"decoration",
+		"terminal"
+	],
+	"license": "MIT",
+	"homepage": "https://github.com/rafaga2469/pi-seasonal#readme",
+	"bugs": {
+		"url": "https://github.com/rafaga2469/pi-seasonal/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/rafaga2469/pi-seasonal.git"
+	},
+	"pi": {
+		"extensions": [
+			"./extensions/seasonal"
+		]
+	},
+	"peerDependencies": {
+		"@earendil-works/pi-ai": "*",
+		"@earendil-works/pi-coding-agent": "*",
+		"@earendil-works/pi-tui": "*"
+	},
+	"devDependencies": {
+		"@types/node": "*",
+		"tsx": "^4.23.15",
+		"typescript": "^5.9.0"
+	}
+}
