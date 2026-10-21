@@ -27,9 +27,18 @@ export interface HolidayDef {
 	timing: HolidayTiming;
 }
 
-// Color-square flag (terminals without regional-indicator composition can't
-// render 🇨🇴; these squares render everywhere): yellow half, blue + red quarters.
-const CO_FLAG = "\u{1F7E8}\u{1F7E8}\u{1F7E6}\u{1F7E5}"; // 🟨🟨🟦🟥
+// Colombian flag as ANSI-colored blocks (reliable everywhere): yellow half,
+// blue + red quarters, drawn by segment colors on solid U+2588 blocks.
+const FLAG_BLOCKS = "\u2588\u2588\u2588\u2588";
+const FLAG: InlineSpriteDef = {
+	emoji: "",
+	color: "gold",
+	segments: [
+		{ text: "\u2588\u2588", color: "gold" },
+		{ text: "\u2588", color: "blue" },
+		{ text: "\u2588", color: "red" },
+	],
+};
 
 export const CO_HOLIDAYS: HolidayDef[] = [
 	{
@@ -41,7 +50,7 @@ export const CO_HOLIDAYS: HolidayDef[] = [
 			{ emoji: "\u{1F386}", color: "gold" }, // 🎆
 			{ emoji: "\u{1F37E}", color: "gold" }, // 🥂
 			{ emoji: "\u{1F387}", color: "pink" }, // 🎇
-			{ emoji: CO_FLAG, color: "gold" },
+			FLAG,
 		],
 		timing: { kind: "fixed", month: 1, day: 1 },
 	},
@@ -53,7 +62,7 @@ export const CO_HOLIDAYS: HolidayDef[] = [
 		emojis: [
 			{ emoji: "\u{1F451}", color: "gold" }, // 👑
 			{ emoji: "\u2728", color: "gold" }, // ✨
-			{ emoji: CO_FLAG, color: "gold" },
+			FLAG,
 			{ emoji: "\u{1F381}", color: "red" }, // 🎁
 		],
 		timing: { kind: "mondayAfter", month: 1, day: 6 },
@@ -67,7 +76,7 @@ export const CO_HOLIDAYS: HolidayDef[] = [
 			{ emoji: "\u{1F54A}\uFE0F", color: "snow" }, // 🕊️
 			{ emoji: "\u{1F528}", color: "brown" }, // 🔨
 			{ emoji: "\u{1F3E0}", color: "brown" }, // 🏠
-			{ emoji: CO_FLAG, color: "gold" },
+			FLAG,
 		],
 		timing: { kind: "mondayAfter", month: 3, day: 19 },
 	},
@@ -79,7 +88,7 @@ export const CO_HOLIDAYS: HolidayDef[] = [
 		emojis: [
 			{ emoji: "\u{1F64F}", color: "snow" }, // 🙏
 			{ emoji: "\u271D\uFE0F", color: "purple" }, // ✝️
-			{ emoji: CO_FLAG, color: "gold" },
+			FLAG,
 			{ emoji: "\u{1F56F}\uFE0F", color: "flame" }, // 🕯️
 		],
 		timing: { kind: "easterOffset", offset: -3 }, // Jueves Santo
@@ -93,7 +102,7 @@ export const CO_HOLIDAYS: HolidayDef[] = [
 			{ emoji: "\u271D\uFE0F", color: "purple" }, // ✝️
 			{ emoji: "\u{1F64F}", color: "snow" }, // 🙏
 			{ emoji: "\u{1F56F}\uFE0F", color: "flame" }, // 🕯️
-			{ emoji: CO_FLAG, color: "gold" },
+			FLAG,
 		],
 		timing: { kind: "easterOffset", offset: -2 },
 	},
@@ -119,7 +128,7 @@ export const CO_HOLIDAYS: HolidayDef[] = [
 			{ emoji: "\u{1F54A}\uFE0F", color: "snow" }, // 🕊️
 			{ emoji: "\u2601\uFE0F", color: "web" }, // ☁️
 			{ emoji: "\u2728", color: "gold" }, // ✨
-			{ emoji: CO_FLAG, color: "gold" },
+			FLAG,
 		],
 		timing: { kind: "easterOffset", offset: 43 }, // Monday by decree
 	},
@@ -132,7 +141,7 @@ export const CO_HOLIDAYS: HolidayDef[] = [
 			{ emoji: "\u{1F35E}", color: "brown" }, // 🍞
 			{ emoji: "\u{1F377}", color: "red" }, // 🍷
 			{ emoji: "\u26EA\uFE0F", color: "gold" }, // ⛪
-			{ emoji: CO_FLAG, color: "gold" },
+			FLAG,
 		],
 		timing: { kind: "easterOffset", offset: 64 },
 	},
@@ -145,7 +154,7 @@ export const CO_HOLIDAYS: HolidayDef[] = [
 			{ emoji: "\u2764\uFE0F", color: "red" }, // ❤️
 			{ emoji: "\u271D\uFE0F", color: "gold" }, // ✝️
 			{ emoji: "\u26EA\uFE0F", color: "gold" }, // ⛪
-			{ emoji: CO_FLAG, color: "gold" },
+			FLAG,
 		],
 		timing: { kind: "easterOffset", offset: 71 },
 	},
@@ -158,7 +167,7 @@ export const CO_HOLIDAYS: HolidayDef[] = [
 			{ emoji: "\u{1F511}", color: "gold" }, // 🔑
 			{ emoji: "\u{1F41F}", color: "blue" }, // 🐟
 			{ emoji: "\u26EA\uFE0F", color: "gold" }, // ⛪
-			{ emoji: CO_FLAG, color: "gold" },
+			FLAG,
 		],
 		timing: { kind: "mondayAfter", month: 6, day: 29 },
 	},
@@ -171,7 +180,7 @@ export const CO_HOLIDAYS: HolidayDef[] = [
 			{ emoji: "\u{1F64F}", color: "snow" }, // 🙏
 			{ emoji: "\u{1F4FF}", color: "gold" }, // 📿
 			{ emoji: "\u{1F451}", color: "gold" }, // 👑
-			{ emoji: CO_FLAG, color: "gold" },
+			FLAG,
 		],
 		timing: { kind: "mondayAfter", month: 7, day: 9 },
 	},
@@ -181,7 +190,7 @@ export const CO_HOLIDAYS: HolidayDef[] = [
 		banner: "-=[ ¡20 de Julio! ]=-",
 		color: "gold",
 		emojis: [
-			{ emoji: CO_FLAG, color: "gold" },
+			FLAG,
 			{ emoji: "\u{1F389}", color: "gold" }, // 🎉
 			{ emoji: "\u{1F49B}", color: "gold" }, // 💛
 			{ emoji: "\u{1F387}", color: "pink" }, // 🎇
@@ -194,7 +203,7 @@ export const CO_HOLIDAYS: HolidayDef[] = [
 		banner: "-=[ 7 de Agosto ]=-",
 		color: "red",
 		emojis: [
-			{ emoji: CO_FLAG, color: "gold" },
+			FLAG,
 			{ emoji: "\u2694\uFE0F", color: "web" }, // ⚔️
 			{ emoji: "\u{1F6E1}\uFE0F", color: "web" }, // 🛡️
 			{ emoji: "\u{1F3F0}", color: "web" }, // 🏰
@@ -210,7 +219,7 @@ export const CO_HOLIDAYS: HolidayDef[] = [
 			{ emoji: "\u{1F64F}", color: "snow" }, // 🙏
 			{ emoji: "\u{1F47C}", color: "snow" }, // 👼
 			{ emoji: "\u{1F33C}", color: "orange" }, // 🌼
-			{ emoji: CO_FLAG, color: "gold" },
+			FLAG,
 		],
 		timing: { kind: "mondayAfter", month: 8, day: 15 },
 	},
@@ -223,7 +232,7 @@ export const CO_HOLIDAYS: HolidayDef[] = [
 			{ emoji: "\u{1F30E}", color: "blue" }, // 🌎
 			{ emoji: "\u{1F9ED}", color: "gold" }, // 🧭
 			{ emoji: "\u{1F6F6}", color: "brown" }, // 🛶
-			{ emoji: CO_FLAG, color: "gold" },
+			FLAG,
 		],
 		timing: { kind: "mondayAfter", month: 10, day: 12 },
 	},
@@ -249,7 +258,7 @@ export const CO_HOLIDAYS: HolidayDef[] = [
 			{ emoji: "\u{1F3F0}", color: "web" }, // 🏰
 			{ emoji: "\u{1F6E1}\uFE0F", color: "web" }, // 🛡️
 			{ emoji: "\u{1F6A2}", color: "blue" }, // 🚢
-			{ emoji: CO_FLAG, color: "gold" },
+			FLAG,
 		],
 		timing: { kind: "mondayAfter", month: 11, day: 11 },
 	},
@@ -262,7 +271,7 @@ export const CO_HOLIDAYS: HolidayDef[] = [
 			{ emoji: "\u{1F64F}", color: "snow" }, // 🙏
 			{ emoji: "\u{1F47C}", color: "snow" }, // 👼
 			{ emoji: "\u{1F31F}", color: "gold" }, // 🌟
-			{ emoji: CO_FLAG, color: "gold" },
+			FLAG,
 		],
 		timing: { kind: "fixed", month: 12, day: 8 },
 	},

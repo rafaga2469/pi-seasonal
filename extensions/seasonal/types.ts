@@ -25,6 +25,14 @@ export interface InlineSpriteDef {
 	color: string;
 	/** Overrides the automatic per-index speed (see AUTO_SPEEDS in scenes.ts). */
 	speed?: number;
+	/** Multi-part sprite (e.g. ANSI-colored flag): painted in order, emoji/color ignored. */
+	segments?: InlineSpriteSegment[];
+}
+
+export interface InlineSpriteSegment {
+	/** Raw single-column glyphs (ANSI-free; styled with `color`). */
+	text: string;
+	color: string;
 }
 
 export interface InlineSpriteDef {
@@ -32,6 +40,14 @@ export interface InlineSpriteDef {
 	color: string;
 	/** Overrides the automatic per-index speed (see AUTO_SPEEDS in scenes.ts). */
 	speed?: number;
+	/** Multi-part sprite (e.g. ANSI-colored flag): painted in order, emoji/color ignored. */
+	segments?: InlineSpriteSegment[];
+}
+
+export interface InlineSpriteSegment {
+	/** Raw single-column glyphs (ANSI-free; styled with `color`). */
+	text: string;
+	color: string;
 }
 
 /**

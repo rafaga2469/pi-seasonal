@@ -56,7 +56,15 @@ function render(canvas: Canvas, kit: Kit, width: number): string[] {
 	return canvasToLines(canvas, kit, width);
 }
 
-/** Display columns a sprite glyph string occupies. */
+/** Display columns a sprite occupies: either its emoji clusters or its segments. */
+function spriteWidthOf(sprite: InlineSpriteDef): number {
+	if (sprite.segments) {
+		return sprite.segments.reduce((sum, seg) => sum + widthOf(seg.text), 0);
+	}
+	return clusterWidths(sprite.emoji);
+}
+
+/** Display columns a raw glyph string occupies. */
 function clusterWidths(emoji: string): number {
 	return clusters(emoji).reduce((sum, c) => sum + clusterWidth(c), 0);
 }
@@ -80,11 +88,11 @@ export function makeInline(
 ): Season["inline"] {
 	return (width: number, frame: number, kit: Kit): string => {
 		const budget = sprites.length;
-		const cols = Math.max(8, width - sprites.reduce((sum, s) => sum + clusterWidths(s.emoji), 0));
+		const cols = Math.max(8, width - sprites.reduce((sum, s) => sum + spriteWidthOf(s), 0));
 		const canvas = createCanvas(cols, 1);
 		// Drift window covers the whole line (sprites are 2 columns wide).
 		const a = 0;
-		const longest = Math.max(...sprites.map((s) => clusterWidths(s.emoji)), 1);
+		const longest = Math.max(...sprites.map((s) => spriteWidthOf(s)), 1);
 		const b = Math.max(a + 4, cols - longest - 2);
 		const span = b - a;
 		let i = 0;
@@ -100,7 +108,15 @@ export function makeInline(
 			const spriteWidth = clusterWidths(sprite.emoji);
 			const rightEdge = Math.max(a + 1, b - spriteWidth + 1);
 			const x = Math.max(0, Math.min(rightEdge, a + Math.floor(travelled)));
-			blit(canvas, x, 0, sprite.emoji, sprite.color);
+			if (sprite.segments) {
+				let cursor = x;
+				for (const segment of sprite.segments) {
+					blit(canvas, cursor, 0, segment.text, segment.color);
+					cursor += widthOf(segment.text);
+				}
+			} else {
+				blit(canvas, x, 0, sprite.emoji, sprite.color);
+			}
 			i++;
 		}
 		asciiAccent?.(canvas, cols, frame);
