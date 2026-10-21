@@ -27,7 +27,9 @@ export interface HolidayDef {
 	timing: HolidayTiming;
 }
 
-const CO_FLAG = "\u{1F1E8}\u{1F1F4}"; // 🇨🇴
+// Color-square flag (terminals without regional-indicator composition can't
+// render 🇨🇴; these squares render everywhere): yellow half, blue + red quarters.
+const CO_FLAG = "\u{1F7E8}\u{1F7E8}\u{1F7E6}\u{1F7E5}"; // 🟨🟨🟦🟥
 
 export const CO_HOLIDAYS: HolidayDef[] = [
 	{

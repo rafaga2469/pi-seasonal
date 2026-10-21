@@ -10,7 +10,7 @@
  */
 
 import type { InlineSpriteDef, Kit, Season } from "./types.ts";
-import { blit, canvasToLines, createCanvas, hash, put, widthOf, type Canvas } from "./canvas.ts";
+import { blit, canvasToLines, clusters, clusterWidth, createCanvas, hash, put, widthOf, type Canvas } from "./canvas.ts";
 
 const TAU = Math.PI * 2;
 
@@ -56,6 +56,11 @@ function render(canvas: Canvas, kit: Kit, width: number): string[] {
 	return canvasToLines(canvas, kit, width);
 }
 
+/** Display columns a sprite glyph string occupies. */
+function clusterWidths(emoji: string): number {
+	return clusters(emoji).reduce((sum, c) => sum + clusterWidth(c), 0);
+}
+
 // ---------------------------------------------------------------------------
 // Inline mode: ONE line per frame — banner centered plus animating sprites.
 // ---------------------------------------------------------------------------
@@ -75,11 +80,12 @@ export function makeInline(
 ): Season["inline"] {
 	return (width: number, frame: number, kit: Kit): string => {
 		const budget = sprites.length;
-		const cols = Math.max(8, width - budget);
+		const cols = Math.max(8, width - sprites.reduce((sum, s) => sum + clusterWidths(s.emoji), 0));
 		const canvas = createCanvas(cols, 1);
 		// Drift window covers the whole line (sprites are 2 columns wide).
 		const a = 0;
-		const b = Math.max(a + 4, cols - 3);
+		const longest = Math.max(...sprites.map((s) => clusterWidths(s.emoji)), 1);
+		const b = Math.max(a + 4, cols - longest - 2);
 		const span = b - a;
 		let i = 0;
 		for (const sprite of sprites) {
@@ -91,8 +97,10 @@ export function makeInline(
 			// Alternate the travel: even sprites run forward, odd ones backward.
 			const travelled = i % 2 === 0 ? tri : span - tri;
 			// Distinct speeds produce fractional positions; floor to a column.
-			const x = Math.max(0, Math.min(b, a + Math.floor(travelled)));
-			put(canvas, x, 0, sprite.emoji, sprite.color);
+			const spriteWidth = clusterWidths(sprite.emoji);
+			const rightEdge = Math.max(a + 1, b - spriteWidth + 1);
+			const x = Math.max(0, Math.min(rightEdge, a + Math.floor(travelled)));
+			blit(canvas, x, 0, sprite.emoji, sprite.color);
 			i++;
 		}
 		asciiAccent?.(canvas, cols, frame);
