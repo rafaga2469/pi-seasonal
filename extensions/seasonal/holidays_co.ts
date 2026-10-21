@@ -27,7 +27,7 @@ export interface HolidayDef {
 	timing: HolidayTiming;
 }
 
-const CO_FLAG = "\u{1F1E6}\u{1F1EA}"; // 🇨🇴
+const CO_FLAG = "\u{1F1E8}\u{1F1F4}"; // 🇨🇴
 
 export const CO_HOLIDAYS: HolidayDef[] = [
 	{
