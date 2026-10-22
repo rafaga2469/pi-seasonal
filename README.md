@@ -49,9 +49,14 @@ combinados con textura ASCII (telarañas, hilo de la araña, nieve, papel picado
 - `decoration.ts` — fijado pinned: envuelve el part `"header"` del estado compartido de
   gentle-pi, añade la línea debajo de su barra y sube la revisión del cache sidebar en
   cada tick para que el layout re-renderice.
+- `mount.ts` — montaje auto-reparado: si el primer intento pinned llega antes de que
+  gentle-shell registre su rail de header (carrera en el arranque), reintenta de forma
+  acotada hasta que el rail aparece y solo entonces retira el fallback de header.
 - `overlay.ts` — modo celebración a pantalla completa bajo demanda.
 - `state.ts` — persistencia de preferencia (respeta `SEASONAL_STATE_PATH` para pruebas aisladas).
 - `smoke.ts` — prueba de humo: anchos 20–121 × 26 frames con ancho de display exacto + fechas clave.
+- `smoke-mount.ts` — prueba de humo del montaje auto-reparado: la carrera del arranque con rail
+  tardío, retiros acotados y limpieza del fallback.
 - `tsconfig.typecheck.json` — solo chequeo de tipos; **no** usar de `tsconfig.json`:
   los `paths` rompen la resolución runtime de jiti/tsx.
 
