@@ -26,7 +26,8 @@ import {
 	setSceneRegistry,
 	type Country,
 } from "./calendar.ts";
-import { createPinnedDecoration } from "./decoration.ts";
+import { createPinnedDecoration, shellHeaderRailAvailable } from "./decoration.ts";
+import { mountDecoration } from "./mount.ts";
 import { celebrationFactory } from "./overlay.ts";
 import { SCENES } from "./scenes.ts";
 import { loadState, saveState, type CountrySetting, type SeasonalState } from "./state.ts";
@@ -55,7 +56,9 @@ export default function (pi: ExtensionAPI) {
 	/**
 	 * Mount the decoration pinned directly below the shell header bar (full
 	 * width) when gentle-pi's shared sidebar state is available; otherwise
-	 * fall back to Pi's own scrolleable document header.
+	 * fall back to Pi's own scrolleable document header and keep retrying
+	 * the pinned install until gentle-shell registers its header rail, so a
+	 * boot-order race never costs the decoration for the whole session.
 	 */
 	function ensureDecoration(ui: ExtensionCommandContext["ui"], season: Season | undefined): void {
 		if (state.mode === "off" || !season) {
@@ -65,36 +68,26 @@ export default function (pi: ExtensionAPI) {
 			ui.setWidget(ANCHOR_KEY, undefined);
 			return;
 		}
-		let headerFallback = false;
 		ui.setWidget(
 			ANCHOR_KEY,
 			(tui: TUI, theme: Theme) => {
-				const kit = createKit(theme);
-				const pinned = createPinnedDecoration(tui, theme, season);
-				if (!pinned.installed && !headerFallback) {
-					headerFallback = true;
-					try {
-						ui.setHeader((scrollTui: TUI, scrollTheme: Theme) => {
-							const scrollKit = createKit(scrollTheme);
-							return createWidget(scrollTui, season, scrollKit);
-						});
-					} catch {}
-				}
-				return {
-					render(): string[] {
-						return [];
+				return mountDecoration({
+					tryPin: () => createPinnedDecoration(tui, theme, season),
+					shellHeaderReady: () => shellHeaderRailAvailable(tui),
+					installFallback: () => {
+						try {
+							ui.setHeader((scrollTui: TUI, scrollTheme: Theme) => {
+								const scrollKit = createKit(scrollTheme);
+								return createWidget(scrollTui, season, scrollKit);
+							});
+						} catch {}
 					},
-					invalidate() {},
-					dispose(): void {
-						pinned.dispose();
-						if (headerFallback) {
-							headerFallback = false;
-							try {
-								ui.setHeader(undefined);
-							} catch {}
-						}
+					removeFallback: () => {
+						try {
+							ui.setHeader(undefined);
+						} catch {}
 					},
-				};
+				});
 			},
 			{ placement: "aboveEditor" },
 		);

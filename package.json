@@ -7,7 +7,7 @@
 		"node": ">=20"
 	},
 	"scripts": {
-		"test:smoke": "tsx extensions/seasonal/smoke.ts",
+		"test:smoke": "tsx extensions/seasonal/smoke.ts && tsx extensions/seasonal/smoke-mount.ts",
 		"typecheck": "tsc --noEmit -p extensions/seasonal/tsconfig.typecheck.json"
 	},
 	"keywords": [

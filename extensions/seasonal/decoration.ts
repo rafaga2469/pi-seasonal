@@ -43,6 +43,16 @@ export interface PinnedDecoration {
  * do-nothing anchor component plus the real wiring; `installed` reports
  * whether the shell part map was found.
  */
+/**
+ * True once gentle-shell has registered its shell-header rail on this
+ * terminal, i.e. a later pinned attempt would actually find the shell bar to
+ * wrap. Used to gate the self-healing mount retries.
+ */
+export function shellHeaderRailAvailable(tui: { terminal?: unknown } | undefined): boolean {
+	const state = (tui?.terminal as Record<symbol, unknown> | undefined)?.[SIDEBAR_STATE] as SidebarStateLike | undefined;
+	return state?.parts?.has?.(HEADER_KEY) === true;
+}
+
 export function createPinnedDecoration(
 	tui: { terminal?: unknown; requestRender(force?: boolean): void },
 	theme: unknown,
